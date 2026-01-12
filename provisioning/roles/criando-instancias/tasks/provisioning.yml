@@ -1,0 +1,137 @@
+---
+- name: Criar Security Group do cluster Kubernetes
+  amazon.aws.ec2_group:
+    name: "{{ sec_group_name }}"
+    description: Security Group Kubernetes Cluster
+    vpc_id: "{{ vpc_id }}"
+    profile: "{{ profile }}"
+    region: "{{ region }}"
+    rules:
+      # SSH (restrinja ao seu IP em produção)
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 0.0.0.0/0
+
+      # Kubernetes API
+      - proto: tcp
+        from_port: 6443
+        to_port: 6443
+        cidr_ip: "{{ vpc_cidr }}"
+
+      # etcd
+      - proto: tcp
+        from_port: 2379
+        to_port: 2380
+        cidr_ip: "{{ vpc_cidr }}"
+
+      # kubelet
+      - proto: tcp
+        from_port: 10250
+        to_port: 10250
+        cidr_ip: "{{ vpc_cidr }}"
+
+      # NodePort
+      - proto: tcp
+        from_port: 30000
+        to_port: 32767
+        cidr_ip: "{{ vpc_cidr }}"
+
+      # Weave Net
+      - proto: tcp
+        from_port: 6783
+        to_port: 6784
+        cidr_ip: "{{ vpc_cidr }}"
+      - proto: udp
+        from_port: 6783
+        to_port: 6784
+        cidr_ip: "{{ vpc_cidr }}"
+
+    rules_egress:
+      - proto: all
+        cidr_ip: 0.0.0.0/0
+  register: k8s_sg
+
+# ---------------------------
+# MASTER
+# ---------------------------
+- name: Criar instância MASTER
+  amazon.aws.ec2_instance:
+    name: "{{ cluster_name }}-master"
+    key_name: "{{ key_name }}"
+    instance_type: "{{ instance_type }}"
+    image_id: "{{ image }}"
+    security_group: "{{ sec_group_name }}"
+    vpc_subnet_id: "{{ subnet_id }}"
+    wait: true
+    region: "{{ region }}"
+    profile: "{{ profile }}"
+    count: "{{ master_count }}"
+    tags:
+      Name: "{{ cluster_name }}-master"
+      Environment: "{{ environment }}"
+      Role: master
+  register: master_ec2
+
+# ---------------------------
+# WORKERS
+# ---------------------------
+- name: Criar instâncias WORKERS
+  amazon.aws.ec2_instance:
+    name: "{{ cluster_name }}-worker"
+    key_name: "{{ key_name }}"
+    instance_type: "{{ instance_type }}"
+    image_id: "{{ image }}"
+    security_group: "{{ sec_group_name }}"
+    vpc_subnet_id: "{{ subnet_id }}"
+    wait: true
+    region: "{{ region }}"
+    profile: "{{ profile }}"
+    count: "{{ worker_count }}"
+    tags:
+      Name: "{{ cluster_name }}-worker"
+      Environment: "{{ environment }}"
+      Role: worker
+  register: worker_ec2
+
+# ---------------------------
+# INVENTÁRIO EM MEMÓRIA
+# ---------------------------
+- name: Adicionar MASTER ao inventário Ansible
+  add_host:
+    name: "{{ item.private_ip_address }}"
+    groups: k8s_master
+    ansible_user: ubuntu
+  loop: "{{ master_ec2.instances }}"
+
+- name: Adicionar WORKERS ao inventário Ansible
+  add_host:
+    name: "{{ item.private_ip_address }}"
+    groups: k8s_workers
+    ansible_user: ubuntu
+  loop: "{{ worker_ec2.instances }}"
+
+# ---------------------------
+# ESPERAR SSH
+# ---------------------------
+#
+- name: Aguardar SSH no MASTER
+  local_action:
+    module: wait_for
+    host: "{{ item.public_ip_address }}"
+    port: 22
+    delay: 30
+    timeout: 600
+    state: started
+  loop: "{{ master_ec2.instances }}"
+
+- name: Aguardar SSH nos WORKERS
+  local_action:
+    module: wait_for
+    host: "{{ item.public_ip_address }}"
+    port: 22
+    delay: 30
+    timeout: 600
+    state: started
+  loop: "{{ worker_ec2.instances }}"
+

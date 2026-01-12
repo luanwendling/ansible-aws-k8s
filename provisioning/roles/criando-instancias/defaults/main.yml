@@ -1,0 +1,20 @@
+---
+region: us-east-1
+profile: giropops
+
+vpc_id: vpc-07f88d4d4ad85f3b5
+vpc_cidr: 172.31.0.0/16
+subnet_id: subnet-0d3415f8d5bb4647f
+
+sec_group_name: k8s-cluster-sg
+
+instance_type: t3.medium
+image: ami-0ecb62995f68bb549
+key_name: ansible_key
+
+master_count: 1
+worker_count: 2
+
+cluster_name: k8s-cluster
+env: lab
+

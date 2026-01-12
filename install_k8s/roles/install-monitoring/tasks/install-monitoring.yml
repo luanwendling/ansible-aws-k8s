@@ -1,0 +1,42 @@
+---
+- name: Create /root/.kube directory
+  file:
+    path: /root/.kube
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Ensure kubeconfig exists for root
+  copy:
+    src: /home/ubuntu/.kube/config
+    dest: /root/.kube/config
+    owner: root
+    group: root
+    mode: '0600'
+    remote_src: true
+
+- name: Add Prometheus Helm repo
+  command: >
+    helm repo add {{ prometheus_repo_name }} {{ prometheus_repo_url }}
+  register: add_repo
+  changed_when: "'has been added' in add_repo.stdout"
+  failed_when: false
+
+- name: Update Helm repos
+  command: helm repo update
+
+- name: Create monitoring namespace
+  command: kubectl create namespace {{ prometheus_namespace }}
+  register: ns_create
+  failed_when: false
+  changed_when: "'created' in ns_create.stdout"
+
+- name: Install Prometheus Stack
+  command: >
+    helm upgrade --install {{ prometheus_release_name }}
+    {{ prometheus_repo_name }}/kube-prometheus-stack
+    --namespace {{ prometheus_namespace }}
+    {{ prometheus_values }}
+  register: prometheus_install
+

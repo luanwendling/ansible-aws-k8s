@@ -1,0 +1,7 @@
+---
+# tasks file for install_k8s_role
+#
+
+- include_tasks: install.yml
+
+

@@ -1,0 +1,8 @@
+---
+# defaults file for create_cluster_role
+#
+k8s_user: ubuntu
+kubeconfig_path: /home/ubuntu/.kube/config
+
+default_url_weavenet: "https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml"
+

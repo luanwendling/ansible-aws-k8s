@@ -1,0 +1,26 @@
+# Ansible
+*.retry
+
+# Inventários Ansible
+hosts
+install_k8s/hosts
+provisioning/hosts
+inventory/hosts*
+
+# Kubernetes
+.kube/
+
+# Helm / Terraform
+.helm/
+.terraform/
+terraform.tfstate*
+terraform.tfstate.backup
+
+# Logs
+*.log
+
+# Editor / OS
+*.swp
+*.swo
+.DS_Store
+

@@ -1,0 +1,7 @@
+---
+- name: Provisionar infraestrutura AWS para Kubernetes
+  hosts: localhost
+  gather_facts: false
+  roles:
+    - criando-instancias
+

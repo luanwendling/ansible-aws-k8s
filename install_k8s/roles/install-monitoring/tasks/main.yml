@@ -1,0 +1,4 @@
+---
+# tasks file for install-monit-tools
+#
+- import_tasks: install-monitoring.yml

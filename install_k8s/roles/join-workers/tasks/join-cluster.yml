@@ -1,0 +1,10 @@
+---
+- name: Verificar se o worker já faz parte do cluster
+  stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: kubelet_conf
+
+- name: Adicionar worker ao cluster Kubernetes
+  command: "{{ hostvars['K8S_JOIN']['join_cmd'] }} --node-name {{ inventory_hostname }}"
+  when: not kubelet_conf.stat.exists
+

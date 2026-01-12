@@ -1,0 +1,42 @@
+---
+- name: Inicializar cluster Kubernetes
+  command: kubeadm init \
+    --apiserver-advertise-address={{ K8S_MASTER_NODE_IP }} \
+    --pod-network-cidr=10.244.0.0/16
+  args:
+    creates: /etc/kubernetes/admin.conf
+
+- name: Criar diretório .kube
+  file:
+    path: /home/ubuntu/.kube
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0750'
+
+- name: Copiar admin.conf para usuário ubuntu
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/ubuntu/.kube/config
+    owner: ubuntu
+    group: ubuntu
+    mode: '0640'
+    remote_src: yes
+
+- name: Instalar Weave Net (CNI)
+  become: yes
+  become_user: ubuntu
+  command: kubectl apply -f {{ default_url_weavenet }}
+  environment:
+    KUBECONFIG: /home/ubuntu/.kube/config
+
+- name: Gerar comando de join
+  command: kubeadm token create --print-join-command
+  register: join_command
+  changed_when: false
+
+- name: Armazenar comando de join em host dummy
+  add_host:
+    name: "K8S_JOIN"
+    join_cmd: "{{ join_command.stdout }}"
+

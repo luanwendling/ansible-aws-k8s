@@ -1,0 +1,80 @@
+---
+# -------------------------------
+# BOOTSTRAP (hosts virgens)
+# -------------------------------
+- name: Bootstrap dos nodes
+  hosts: all
+  become: yes
+  remote_user: ubuntu
+  gather_facts: no
+
+  pre_tasks:
+    - name: Atualizar cache do apt
+      raw: apt-get update -y
+
+    - name: Instalar Python
+      raw: apt-get install -y python3 python3-apt
+
+# -------------------------------
+# INSTALAÇÃO BASE (todos)
+# -------------------------------
+- name: Instalar Kubernetes base
+  hosts: k8s
+  become: yes
+  remote_user: ubuntu
+  gather_facts: yes
+  serial: 1
+
+  roles:
+    - install-k8s
+
+# -------------------------------
+# CREATE CLUSTER (master)
+# -------------------------------
+- name: Criar cluster Kubernetes
+  hosts: k8s_master
+  become: yes
+  remote_user: ubuntu
+  gather_facts: yes
+
+  roles:
+    - create-cluster
+
+# -------------------------------
+# JOIN WORKERS
+# -------------------------------
+- name: Adicionar workers ao cluster
+  hosts: k8s_workers
+  become: yes
+  remote_user: ubuntu
+  gather_facts: yes
+  serial: 1
+
+  roles:
+    - join-workers
+
+# -------------------------------
+# INSTALL HELM (master)
+# -------------------------------
+- name: Instalar Helm
+  hosts: k8s_master
+  become: yes
+  remote_user: ubuntu
+  gather_facts: yes
+  tags: helm
+
+  roles:
+    - install-helm
+
+# -------------------------------
+# INSTALL MONITORING
+# -------------------------------
+- name: Instalar Prometheus + Grafana
+  hosts: k8s_master
+  become: yes
+  remote_user: ubuntu
+  gather_facts: yes
+  tags: monitoring
+
+  roles:
+    - install-monitoring
