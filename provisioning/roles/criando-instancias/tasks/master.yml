@@ -1,0 +1,24 @@
+- name: Garantir exatamente 1 instância MASTER
+  amazon.aws.ec2_instance:
+    name: "{{ cluster_name }}-master"
+    key_name: "{{ key_name }}"
+    instance_type: "{{ instance_type }}"
+    image_id: "{{ image }}"
+    security_group: "{{ sec_group_name }}"
+    vpc_subnet_id: "{{ subnet_id }}"
+    region: "{{ region }}"
+    profile: "{{ profile }}"
+    wait: true
+    state: present
+
+    exact_count: 1
+    filters:
+      "tag:Role": master
+      "tag:Environment": "{{ environment }}"
+      "vpc-id": "{{ vpc_id }}"
+
+    tags:
+      Name: "{{ cluster_name }}-master"
+      Role: master
+      Environment: "{{ environment }}"
+

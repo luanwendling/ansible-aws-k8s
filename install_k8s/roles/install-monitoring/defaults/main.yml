@@ -1,9 +1,5 @@
 ---
-# defaults file for install-monit-tools
-prometheus_repo_name: prometheus-community
-prometheus_repo_url: https://prometheus-community.github.io/helm-charts
-
+grafana_nodeport: 31120
+monitoring_namespace: monitoring
 prometheus_release_name: prometheus
-prometheus_namespace: monitoring
-
-prometheus_values: ""
+prometheus_chart: prometheus-community/kube-prometheus-stack

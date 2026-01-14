@@ -1,0 +1,36 @@
+---
+- name: Escalar workers do cluster Kubernetes
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars_files:
+    - roles/criando-instancias/defaults/main.yml
+    - roles/criando-instancias/vars/main.yml
+
+  vars:
+    worker_count: 4    # 👈 só muda isso
+
+  tasks:
+    - name: Garantir quantidade exata de WORKERS no cluster
+      amazon.aws.ec2_instance:
+        name: "{{ cluster_name }}-worker"
+        key_name: "{{ key_name }}"
+        instance_type: "{{ instance_type }}"
+        image_id: "{{ image }}"
+        security_group: "{{ sec_group_name }}"
+        vpc_subnet_id: "{{ subnet_id }}"
+        region: "{{ region }}"
+        profile: "{{ profile }}"
+        wait: true
+
+        exact_count: "{{ worker_count }}"
+        filters:
+          "tag:Role": worker
+          "tag:Environment": "{{ environment }}"
+
+        tags:
+          Name: "{{ cluster_name }}-worker"
+          Role: worker
+          Environment: "{{ environment }}"
+

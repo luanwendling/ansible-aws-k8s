@@ -1,0 +1,6 @@
+- name: Criar cluster Kubernetes
+  hosts: k8s_master
+  become: yes
+
+  roles:
+    - deploy-app

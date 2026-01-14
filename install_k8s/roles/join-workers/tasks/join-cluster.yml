@@ -4,7 +4,13 @@
     path: /etc/kubernetes/kubelet.conf
   register: kubelet_conf
 
-- name: Adicionar worker ao cluster Kubernetes
-  command: "{{ hostvars['K8S_JOIN']['join_cmd'] }} --node-name {{ inventory_hostname }}"
+- name: Gerar comando de join no master
+  command: kubeadm token create --print-join-command
+  delegate_to: "{{ groups['k8s_master'][0] }}"
+  run_once: true
+  register: join_cmd
   when: not kubelet_conf.stat.exists
 
+- name: Adicionar worker ao cluster Kubernetes
+  command: "{{ join_cmd.stdout }}"
+  when: not kubelet_conf.stat.exists

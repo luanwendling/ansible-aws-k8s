@@ -2,3 +2,5 @@
 # tasks file for criando-instancias
 
 - import_tasks: provisioning.yml
+- import_tasks: master.yml
+  #- import_tasks: workers.yml
